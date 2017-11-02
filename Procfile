@@ -1,1 +1,1 @@
-web: bokeh serve --port=$PORT --use-xheaders myapp.py
+web: bokeh serve --port=$PORT --use-xheaders app.py
