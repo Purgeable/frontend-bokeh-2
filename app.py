@@ -72,33 +72,20 @@ def get_from_api_datapoints(freq, name):
     return data
 
 
-def get_time_series(freq, name):
+def get_xy(freq, name):
     """Get data as dictionary with 'x' and 'y' keys."""
     data = get_from_api_datapoints(freq, name)
-    return dict(x=pd.to_datetime([d['date'] for d in data]),
-                y=[d['value'] for d in data])
-
-
-def get_data_frame(freq, name1, name2):
-    """Make pandas Dataframe based on parameters.
-    column names will be 
-    """
-    data1 = get_from_api_datapoints(freq, name1) 
-    data2 = get_from_api_datapoints(freq, name2) 
-    data1.extend(data2)
-    df = pd.DataFrame(data1)
-    df.date = pd.to_datetime(df.date)
-    df = df.pivot(columns='name', values='value', index='date')
-    df.index.name = df.columns.name = None
-    return df[[name1, name2]]
-
-
-def get_column_data_source(freq, name1, name2):
-    df = get_data_frame(freq, name1, name2)
-    df.columns = ['line1', 'line2']
-    return ColumnDataSource(df)
-
+    return [pd.to_datetime(d['date']) for d in data], \
+           [d['value'] for d in data]
+            
+            
+def get_data(freq, name1, name2):
+    x1, y1 = get_xy(freq, name1)
+    x2, y2 = get_xy(freq, name2)
+    d = dict(xs=[x1, x2], ys=[y1, y2])
+    return ColumnDataSource(d)
     
+
 def create_radio_buttons(start_freq):
     desc_list = Frequency.descriptions()
     n = Frequency.get_index(start_freq)
@@ -115,12 +102,12 @@ def create_selectors(freq, name1, name2):
 
 
 def create_plot(freq, name1, name2):
-    src = get_column_data_source(freq, name1, name2)
+    src = get_data(freq, name1, name2)
     plot = figure(plot_width=600, 
                   plot_height=400, 
                   x_axis_type="datetime")
-    plot.line(source=src, x='index', y='line1', color='navy')
-    plot.line(source=src, x='index', y='line2', color='red')    
+    plot.multi_line(source=src, xs='xs', ys='ys', 
+                    line_color=['navy', 'red'])
     plot.title.text = f'{name1}, {name2}'
     return plot, src
 
@@ -135,10 +122,8 @@ def update_plot(attr, old, new):
     # step 2. update plot
     selected_indicator1 = name_selector1.value
     selected_indicator2 = name_selector2.value    
-    new_src = get_column_data_source(selected_freq, 
-                                     selected_indicator1, 
-                                     selected_indicator2)
-    source.data = new_src.data
+    param = selected_freq, selected_indicator1, selected_indicator2
+    source.data = get_data(*param).data
     plot.title.text = f'{selected_indicator1}, {selected_indicator2}'
 
 
@@ -160,3 +145,4 @@ layout = column(widgetbox(frequency_selector,
                           name_selector2), 
                 plot)
 curdoc().add_root(layout)
+
