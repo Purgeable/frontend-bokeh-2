@@ -71,20 +71,29 @@ def get_from_api_datapoints(freq, name):
         return []
     return data
 
-
 def get_xy(freq, name):
     """Get data as dictionary with 'x' and 'y' keys."""
     data = get_from_api_datapoints(freq, name)
     return [pd.to_datetime(d['date']) for d in data], \
            [d['value'] for d in data]
             
-            
-def get_data(freq, name1, name2):
+def get_multi_line_data(freq, name1, name2):
     x1, y1 = get_xy(freq, name1)
     x2, y2 = get_xy(freq, name2)
     d = dict(xs=[x1, x2], ys=[y1, y2])
     return ColumnDataSource(d)
-    
+
+def get_data(freq, name1, name2):
+    d, x = get_xy(freq, name1)
+    df1 = pd.DataFrame(x, index=d, columns=['line1'])
+    d, x = get_xy(freq, name2)
+    df2 = pd.DataFrame(x, index=d, columns=['line2'])
+    df = df1.merge(df2, right_index=True, left_index=True)
+    d = dict(x=df.index.tolist(),
+             line1=df['line1'].tolist(), 
+             line2=df['line2'].tolist())
+    return ColumnDataSource(d)
+
 
 def create_radio_buttons(start_freq):
     desc_list = Frequency.descriptions()
@@ -102,12 +111,12 @@ def create_selectors(freq, name1, name2):
 
 
 def create_plot(freq, name1, name2):
-    src = get_data(freq, name1, name2)
     plot = figure(plot_width=600, 
                   plot_height=400, 
                   x_axis_type="datetime")
-    plot.multi_line(source=src, xs='xs', ys='ys', 
-                    line_color=['navy', 'red'])
+    src = get_data(freq, name1, name2)
+    plot.line(source=src, x='x', y='line1', line_color='navy')
+    plot.line(source=src, x='x', y='line2', line_color='red')    
     plot.title.text = f'{name1}, {name2}'
     return plot, src
 
