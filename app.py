@@ -38,6 +38,7 @@ class Frequency:
         """
         return Frequency.letters[choice]
 
+#TODO: move this to tests
 assert Frequency.descriptions() == ['Annual', 'Quarterly', 'Monthly', 'Daily']
 assert [Frequency.on_choice(x) for x in range(4)] == list("aqmd") 
 assert Frequency.get_index('q') == 1      
@@ -95,7 +96,7 @@ def get_data_frame(freq, name1, name2):
 def get_column_data_source(freq, name1, name2):
     df = get_data_frame(freq, name1, name2)
     df.columns = ['line1', 'line2']
-    return ColumnDataSource(df) 
+    return ColumnDataSource(df)
 
     
 def create_radio_buttons(start_freq):
@@ -127,16 +128,17 @@ def create_plot(freq, name1, name2):
 def update_plot(attr, old, new):
     """Bokeh callback function"""
     # step 1. update names selector based on frequency
-    selected_freq = Frequency.on_choice(frequency_selector.active)    
-    name_selector1.options = names(selected_freq)
+    selected_freq = Frequency.on_choice(frequency_selector.active) 
+    new_names = names(selected_freq)
+    name_selector1.options = new_names
+    name_selector2.options = new_names
     # step 2. update plot
     selected_indicator1 = name_selector1.value
     selected_indicator2 = name_selector2.value    
-    df = get_data_frame(selected_freq, 
-                                  selected_indicator1, 
-                                  selected_indicator2).reset_index()
-    df.columns = ['index', 'line1', 'line2']
-    source.data = df.to_dict('list')
+    new_src = get_column_data_source(selected_freq, 
+                                     selected_indicator1, 
+                                     selected_indicator2)
+    source.data = new_src.data
     plot.title.text = f'{selected_indicator1}, {selected_indicator2}'
 
 
@@ -149,6 +151,7 @@ plot, source = create_plot(initial_freq, *initial_names)
 # core behavior with callbacks        
 frequency_selector.on_change('active', update_plot)
 name_selector1.on_change('value', update_plot)
+name_selector2.on_change('value', update_plot)
 
 
 # layout
