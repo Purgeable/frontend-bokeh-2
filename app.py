@@ -132,9 +132,11 @@ def update_plot(attr, old, new):
     # step 2. update plot
     selected_indicator1 = name_selector1.value
     selected_indicator2 = name_selector2.value    
-    source.data = get_column_data_source(selected_freq, 
+    df = get_data_frame(selected_freq, 
                                   selected_indicator1, 
-                                  selected_indicator2)
+                                  selected_indicator2).reset_index()
+    df.columns = ['index', 'line1', 'line2']
+    source.data = df.to_dict('list')
     plot.title.text = f'{selected_indicator1}, {selected_indicator2}'
 
 
