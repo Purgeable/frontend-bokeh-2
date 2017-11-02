@@ -2,7 +2,7 @@
 
 Run locally: `bokeh serve --show app.py`
 
-Deployed at: TODO.
+Deployed at: <https://macrobokeh.herokuapp.com>
 
 
 ## Screenshot
